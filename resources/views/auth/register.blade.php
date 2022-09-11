@@ -64,4 +64,23 @@
             </div>
         </form>
     </x-auth-card>
+
+    @section('scripts')
+    <script>
+        // Get a reference to the file input element
+        const inputElement = document.querySelector('input[name="avatar"]');
+
+        // Create a FilePond instance
+        const pond = FilePond.create(inputElement);
+
+        pond.setOptions({
+            server: {
+                url: '/upload',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            }
+        });
+    </script>
+    @endsection
 </x-guest-layout>

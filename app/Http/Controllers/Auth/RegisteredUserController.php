@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\TemporaryUpload;
 use App\Models\User;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Auth\Events\Registered;
@@ -37,7 +38,7 @@ class RegisteredUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'avatar' => ['required', 'image']
+            'avatar' => ['required']
         ]);
 
         $user = User::create([
@@ -46,16 +47,14 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        // if ($request->hasFile('avatar')) {
-        //     $file = $request->file('avatar');
-        //     $fileName = $file->getClientOriginalName();
+        $temporaryUpload = TemporaryUpload::where('folder', $request->avatar)->first();
 
-        //     $user->update([
-        //         'avatar' => $file->storeAs('avatar/' . $user->id, $fileName, 'public')
-        //     ]);
-        // }
+        if ($temporaryUpload) {
+            $user->addMedia(storage_path('app/public/avatar/tmp/' . $temporaryUpload->folder . '/' . $temporaryUpload->file))->toMediaCollection('avatar');
+            rmdir(storage_path('app/public/avatar/tmp/' . $temporaryUpload->folder));
+            $temporaryUpload->delete();
+        }
 
-        $user->addMediaFromRequest('avatar')->toMediaCollection('avatar');
         event(new Registered($user));
 
         Auth::login($user);
